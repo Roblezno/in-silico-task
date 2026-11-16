@@ -60,6 +60,32 @@ the + strand (nt 51–743), which defines the obelisk *sense* strand. The obelis
 its first 30 nt are appended to its end so that reads crossing the circle junction can align,
 as in the original article.
 
+### 02. Sample sheets and reads
+
+```bash
+THREADS=8 bash scripts/02_download.sh
+```
+
+Saves the ENA run metadata of both BioProjects (`config/ena_PRJNA*.tsv`), builds the sample
+sheets and downloads the reads:
+
+- `config/samples_A.tsv`: the 27 RNA-seq runs of PRJNA1129866 (ObP1, ObN1 and media controls ×
+  replicates A–C × total RNA, rRNA-depleted and RNaseR-treated). DNA-seq and nanopore runs are left out.
+- `config/samples_B.tsv`: the 10 *S. sanguinis* monoculture runs of PRJNA937727 (glucose or
+  sucrose × oxic or anoxic). Co-culture runs are left out.
+
+Reads are downloaded from NCBI SRA (`prefetch`), checked with `vdb-validate` and converted to
+gzipped paired FASTQ files in `data/raw/{A,B}/` (`fasterq-dump`). ENA serves the same reads, but
+its download speed was too low to use. The script skips runs that are already complete.
+
+### 03. Raw read quality control
+
+```bash
+THREADS=8 bash scripts/03_qc_raw.sh
+```
+
+FastQC on every raw FASTQ and one MultiQC report per dataset: `results/qc/raw/multiqc_{A,B}.html`.
+
 ## Status
 
 Work in progress.
