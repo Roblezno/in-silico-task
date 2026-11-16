@@ -1,0 +1,44 @@
+name: in-silico-task
+
+channels:
+  - conda-forge
+  - bioconda
+
+dependencies:
+  # Python
+  - python=3.12
+  - pip
+  - biopython
+  - numpy
+  - scipy
+  - matplotlib
+  - pandas
+  - openpyxl
+  - pysam
+  - pytest
+
+  # Download and quality control
+  - sra-tools
+  - fastqc
+  - multiqc
+  - cutadapt
+  - seqtk
+
+  # Mapping, counting and quantification
+  - hisat2
+  - bowtie2
+  - bwa
+  - kallisto
+  - samtools
+  - subread
+  - rseqc
+
+  # Differential expression (R/Bioconductor)
+  - r-base
+  - bioconductor-deseq2
+  - bioconductor-tximport
+  - r-ggplot2
+
+  # Utilities and report
+  - time
+  - quarto
