@@ -1,0 +1,11 @@
+run	sample	sugar	oxygen	replicate	read_count
+SRR23591541	glucose_anoxic_2	glucose	anoxic	2	15306240
+SRR23591539	glucose_anoxic_3	glucose	anoxic	3	12518939
+SRR23591545	sucrose_anoxic_2	sucrose	anoxic	2	11960257
+SRR23591543	sucrose_anoxic_3	sucrose	anoxic	3	12511417
+SRR23591551	glucose_oxic_1	glucose	oxic	1	16557075
+SRR23591549	glucose_oxic_2	glucose	oxic	2	12436332
+SRR23591547	glucose_oxic_3	glucose	oxic	3	11939024
+SRR23591557	sucrose_oxic_1	sucrose	oxic	1	13873556
+SRR23591555	sucrose_oxic_2	sucrose	oxic	2	13679637
+SRR23591553	sucrose_oxic_3	sucrose	oxic	3	11063941
