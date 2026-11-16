@@ -1,0 +1,33 @@
+run_accession	sample_title	library_name	library_strategy	library_layout	instrument_model	read_count	base_count
+SRR23591529	S.sanguinis +Pg supernatant in Glucose, anoxic conditions replicate 2	GSM7058828	RNA-Seq	PAIRED	Illumina NovaSeq 6000	12608479	2521695800
+SRR23591530	C.durum+S.sanguinis +P.gingivalis in Glucose, anoxic conditions replicate 3	GSM7058827	RNA-Seq	PAIRED	Illumina NovaSeq 6000	12200543	2440108600
+SRR23591534	C.durum+S.sanguinis +F.alocis in Glucose, anoxic conditions replicate 3	GSM7058823	RNA-Seq	PAIRED	Illumina NovaSeq 6000	10899688	2179937600
+SRR23591535	S.sanguinis + F.alocis in Glucose, anoxic conditions replicate 3	GSM7058822	RNA-Seq	PAIRED	Illumina NovaSeq 6000	11758952	2351790400
+SRR23591542	C.durum+S.sanguinis in sucrose, anoxic conditions replicate 3	GSM7058815	RNA-Seq	PAIRED	Illumina NovaSeq 6000	13076685	2615337000
+SRR23591546	C.durum+S.sanguinis in Glucose, oxic conditions replicate 3	GSM7058811	RNA-Seq	PAIRED	Illumina NovaSeq 6000	11120282	2224056400
+SRR23591548	C.durum+S.sanguinis in Glucose, oxic conditions replicate 2	GSM7058809	RNA-Seq	PAIRED	Illumina NovaSeq 6000	12379676	2475935200
+SRR23591554	C.durum+S.sanguinis in sucrose, oxic conditions replicate 2	GSM7058803	RNA-Seq	PAIRED	Illumina NovaSeq 6000	15153898	3030779600
+SRR23591557	S.sanguinis in sucrose, oxic conditions replicate 1	GSM7058800	RNA-Seq	PAIRED	Illumina NovaSeq 6000	13873556	2774711200
+SRR23591528	C.durum+S.sanguinis +Pg supernatant in Glucose, anoxic conditions replicate 2	GSM7058829	RNA-Seq	PAIRED	Illumina NovaSeq 6000	11484831	2296966200
+SRR23591536	C.durum+S.sanguinis +F.alocis in Glucose, anoxic conditions replicate 2	GSM7058821	RNA-Seq	PAIRED	Illumina NovaSeq 6000	11170861	2234172200
+SRR23591537	S.sanguinis +F.alocis in Glucose, anoxic conditions replicate 2	GSM7058820	RNA-Seq	PAIRED	Illumina NovaSeq 6000	11151500	2230300000
+SRR23591539	S.sanguinis in Glucose, anoxic conditions replicate 3	GSM7058818	RNA-Seq	PAIRED	Illumina NovaSeq 6000	12518939	2503787800
+SRR23591540	C.durum+S.sanguinis in Glucose, anoxic conditions replicate 2	GSM7058817	RNA-Seq	PAIRED	Illumina NovaSeq 6000	19385111	3877022200
+SRR23591543	S.sanguinis in sucrose, anoxic conditions replicate 3	GSM7058814	RNA-Seq	PAIRED	Illumina NovaSeq 6000	12511417	2502283400
+SRR23591544	C.durum+S.sanguinis in sucrose, anoxic conditions replicate 2	GSM7058813	RNA-Seq	PAIRED	Illumina NovaSeq 6000	13045188	2609037600
+SRR23591545	S.sanguinis in sucrose, anoxic conditions replicate 2	GSM7058812	RNA-Seq	PAIRED	Illumina NovaSeq 6000	11960257	2392051400
+SRR23591555	S.sanguinis in sucrose, oxic conditions replicate 2	GSM7058802	RNA-Seq	PAIRED	Illumina NovaSeq 6000	13679637	2735927400
+SRR23591556	C.durum+S.sanguinis in sucrose, oxic conditions replicate 1	GSM7058801	RNA-Seq	PAIRED	Illumina NovaSeq 6000	14708605	2941721000
+SRR23591532	C.durum+S.sanguinis +P.gingivalis in Glucose, anoxic conditions replicate 2	GSM7058825	RNA-Seq	PAIRED	Illumina NovaSeq 6000	11035175	2207035000
+SRR23591538	C.durum+S.sanguinis in Glucose, anoxic conditions replicate 3	GSM7058819	RNA-Seq	PAIRED	Illumina NovaSeq 6000	13594165	2718833000
+SRR23591549	S.sanguinis in Glucose, oxic conditions replicate 2	GSM7058808	RNA-Seq	PAIRED	Illumina NovaSeq 6000	12436332	2487266400
+SRR23591551	S.sanguinis in Glucose, oxic conditions replicate 1	GSM7058806	RNA-Seq	PAIRED	Illumina NovaSeq 6000	16557075	3311415000
+SRR23591552	C.durum+S.sanguinis in sucrose, oxic conditions replicate 3	GSM7058805	RNA-Seq	PAIRED	Illumina NovaSeq 6000	12158393	2431678600
+SRR23591526	C.durum+S.sanguinis +Pg supernatant in Glucose, anoxic conditions replicate 3	GSM7058831	RNA-Seq	PAIRED	Illumina NovaSeq 6000	13658516	2731703200
+SRR23591533	S.sanguinis +P.gingivalis in Glucose, anoxic conditions replicate 2	GSM7058824	RNA-Seq	PAIRED	Illumina NovaSeq 6000	10924980	2184996000
+SRR23591541	S.sanguinis in Glucose, anoxic conditions replicate 2	GSM7058816	RNA-Seq	PAIRED	Illumina NovaSeq 6000	15306240	3061248000
+SRR23591550	C.durum+S.sanguinis in Glucose, oxic conditions replicate 1	GSM7058807	RNA-Seq	PAIRED	Illumina NovaSeq 6000	13227213	2645442600
+SRR23591553	S.sanguinis in sucrose, oxic conditions replicate 3	GSM7058804	RNA-Seq	PAIRED	Illumina NovaSeq 6000	11063941	2212788200
+SRR23591527	S.sanguinis + Pg supernatant in Glucose, anoxic conditions replicate 3	GSM7058830	RNA-Seq	PAIRED	Illumina NovaSeq 6000	14387728	2877545600
+SRR23591531	S.sanguinis + P.gingivalis in Glucose, anoxic conditions replicate 3	GSM7058826	RNA-Seq	PAIRED	Illumina NovaSeq 6000	12559204	2511840800
+SRR23591547	S.sanguinis in Glucose, oxic conditions replicate 3	GSM7058810	RNA-Seq	PAIRED	Illumina NovaSeq 6000	11939024	2387804800
