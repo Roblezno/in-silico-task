@@ -1,33 +1,35 @@
 # in-silico-task
 
-Reanálisis de RNA-seq del obelisco-S.s en *Streptococcus sanguinis* SK36 y benchmark de
-mapeadores para su cuantificación. Trabajo final de la asignatura *Estudios in silico en
-Biomedicina* (máster en Bioinformática).
+RNA-seq reanalysis of Obelisk-S.s in *Streptococcus sanguinis* SK36 and a benchmark of read
+mappers for its quantification. Final project for the course *In silico studies in
+Biomedicine* (MSc in Bioinformatics).
 
-## Datos
+## Data
 
-- **PRJNA1129866**: RNA-seq de Zheludev et al. (2024), subcepas ObP1 y ObN1.
-- **PRJNA937727**: RNA-seq de SK36 en monocultivo (diseño oxígeno × azúcar).
+- **PRJNA1129866**: RNA-seq from Zheludev et al. (2024), substrains ObP1 and ObN1.
+- **PRJNA937727**: RNA-seq of SK36 in monoculture (oxygen × sugar design).
 
-Los datos no se versionan: los scripts los descargan en `data/`.
+Data are not versioned: the scripts download them into `data/`.
 
-## Entorno
+## Environment
 
 ```bash
 mamba env create -f environment.yml --strict-channel-priority
 mamba activate in-silico-task
 ```
 
-## Estructura
+`environment.lock.yml` records the exact package versions used.
+
+## Layout
 
 ```
-config/    tablas de muestras y parámetros
-scripts/   pasos del análisis, numerados en orden de ejecución
-report/    informe en Quarto
-data/      datos descargados y referencias (no versionado)
-results/   resultados intermedios y finales (no versionado)
+config/    sample sheets and parameters
+scripts/   analysis steps, numbered in execution order
+report/    Quarto report
+data/      downloaded data and references (not versioned)
+results/   intermediate and final results (not versioned)
 ```
 
-## Estado
+## Status
 
-En desarrollo.
+Work in progress.
