@@ -1,0 +1,19 @@
+# Datos y resultados: se generan con los scripts, no se versionan
+data/
+results/
+
+# Salidas del informe (Quarto)
+.quarto/
+report/*.html
+report/*.pdf
+report/*_files/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# R
+.Rhistory
+.RData
+.Rproj.user/
