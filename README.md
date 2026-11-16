@@ -86,6 +86,23 @@ THREADS=8 bash scripts/03_qc_raw.sh
 
 FastQC on every raw FASTQ and one MultiQC report per dataset: `results/qc/raw/multiqc_{A,B}.html`.
 
+### 04. Read trimming
+
+```bash
+THREADS=8 bash scripts/04_trim.sh
+```
+
+Cutadapt with dataset-specific options chosen from the raw FastQC reports, then FastQC and MultiQC
+again (`results/qc/trimmed/multiqc_{A,B}.html`, including the Cutadapt logs). Trimmed reads go to
+`data/trimmed/{A,B}/`.
+
+| Dataset | Options | Reason |
+|---|---|---|
+| A | `-u 3 -a AGATCGGAAGAGC -A AGATCGGAAGAGC -q 20` | the first 3 nt of read 1 are the template-switching GGG |
+| B | `-u 1 -U 1 -a CTGTCTCTTATACACATCT -A CTGTCTCTTATACACATCT --nextseq-trim=20` | the first base of both reads is a non-biological T; Nextera-type adapter; two-colour (NovaSeq) quality trimming |
+
+Both datasets use `--minimum-length 20`.
+
 ## Status
 
 Work in progress.
