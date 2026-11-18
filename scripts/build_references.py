@@ -4,14 +4,18 @@
 Inputs are the host GenBank record (sequence and annotation) and the obelisk
 FASTA. The obelisk is circular, so the first ``--extension`` nt are appended to
 its end; reads that cross the circle junction by up to that length can then
-align in one piece. The obelisk is annotated on the + strand, which is the
-strand of its Oblin-1 ORF (sense).
+align in one piece. The obelisk is annotated twice over the same contig: on
+the + strand, the strand of its Oblin-1 ORF (sense), and on the - strand
+(antisense). Stranded counting (featureCounts, kallisto) then quantifies each
+strand separately; the antisense strand is the most abundant in Zheludev et
+al. (2024).
 
 Outputs written to ``--outdir``:
     sk36_obelisk.fa   host genome + extended obelisk (mapping, IGV)
-    annotation.saf    host genes + obelisk (featureCounts)
+    annotation.saf    host genes + obelisk sense and antisense (featureCounts)
     host_genes.bed    BED12 with host genes only (RSeQC infer_experiment.py)
-    transcripts.fa    one sequence per gene, on its own strand, + obelisk (kallisto)
+    transcripts.fa    one sequence per gene, on its own strand, + obelisk
+                      sense and antisense (kallisto)
     genes.tsv         gene table: ID, biotype, name, product, coordinates, length
 """
 
@@ -86,18 +90,30 @@ def extend_circular(record: SeqRecord, extension: int) -> SeqRecord:
     return extended
 
 
-def obelisk_gene(obelisk: SeqRecord) -> Gene:
-    """Annotate the whole (extended) obelisk contig as one + strand gene."""
-    return Gene(
-        gene_id=obelisk.id,
-        biotype=OBELISK_BIOTYPE,
-        name="Obelisk-S.s",
-        product="viroid-like circular RNA",
-        chrom=obelisk.id,
-        start=0,
-        end=len(obelisk),
-        strand="+",
-    )
+def obelisk_genes(obelisk: SeqRecord) -> list[Gene]:
+    """Annotate the whole (extended) obelisk contig as a sense (+) and an antisense (-) gene."""
+    return [
+        Gene(
+            gene_id=obelisk.id,
+            biotype=OBELISK_BIOTYPE,
+            name="Obelisk-S.s",
+            product="viroid-like circular RNA, sense strand (Oblin-1)",
+            chrom=obelisk.id,
+            start=0,
+            end=len(obelisk),
+            strand="+",
+        ),
+        Gene(
+            gene_id=f"{obelisk.id}_antisense",
+            biotype=OBELISK_BIOTYPE,
+            name="Obelisk-S.s antisense",
+            product="viroid-like circular RNA, antisense strand",
+            chrom=obelisk.id,
+            start=0,
+            end=len(obelisk),
+            strand="-",
+        ),
+    ]
 
 
 def write_saf(genes: list[Gene], path: Path) -> None:
@@ -160,7 +176,7 @@ def main() -> None:
     host = SeqIO.read(args.genbank, "genbank")
     obelisk = extend_circular(SeqIO.read(args.obelisk, "fasta"), args.extension)
     host_genes = collect_host_genes(host)
-    all_genes = host_genes + [obelisk_gene(obelisk)]
+    all_genes = host_genes + obelisk_genes(obelisk)
     sequences = {host.id: host.seq, obelisk.id: obelisk.seq}
 
     SeqIO.write([host, obelisk], args.outdir / "sk36_obelisk.fa", "fasta")
