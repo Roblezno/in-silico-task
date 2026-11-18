@@ -5,7 +5,8 @@
 # - Strandedness (-s), set per dataset from RSeQC infer_experiment (step 05):
 #     A: 0.965-0.994 of the reads are explained by "1++,1--,2+-,2-+", so read 1
 #        has the strand of the RNA: -s 1.
-#     B: not set yet (phase F5).
+#     B: 0.964-0.997 of the reads are explained by "1+-,1-+,2++,2--", so read 1
+#        is antisense to the RNA (dUTP-type library): -s 2.
 # - featureCounts default options count only uniquely mapped pairs, so pairs
 #   from the four identical rRNA operons are left unassigned. The rRNA fraction
 #   is computed by scripts/obelisk_metrics.py instead.
@@ -37,7 +38,11 @@ case "${DATASET}" in
         # Coverage figure: obelisk-positive runs, one panel per preparation.
         COVERAGE_OPTIONS=(--keep strain=ObP1 --group-by prep --groups totalRNA rRNAdep RNaseR)
         ;;
-    B) echo "Strandedness of dataset B is not set yet (phase F5)" >&2; exit 1 ;;
+    B)
+        STRAND=2
+        # Coverage figure: all runs, one panel per oxygen condition.
+        COVERAGE_OPTIONS=(--group-by oxygen --groups oxic anoxic)
+        ;;
 esac
 SAMPLES="config/samples_${DATASET}.tsv"
 BAMDIR="data/bam/${DATASET}"
