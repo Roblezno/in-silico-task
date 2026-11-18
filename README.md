@@ -48,9 +48,9 @@ Downloads the *S. sanguinis* SK36 genome (GenBank CP000387.1) from NCBI and writ
 | File | Content | Used by |
 |---|---|---|
 | `sk36_obelisk.fa` (+ `.fai`) | host genome + Obelisk-S.s extended by 30 nt | mappers, IGV |
-| `annotation.saf` | host genes + obelisk | featureCounts |
+| `annotation.saf` | host genes + obelisk (sense and antisense) | featureCounts |
 | `host_genes.bed` | BED12, host genes only | RSeQC `infer_experiment.py` |
-| `transcripts.fa` | one sequence per gene on its own strand + obelisk | kallisto |
+| `transcripts.fa` | one sequence per gene on its own strand + obelisk (sense and antisense) | kallisto |
 | `genes.tsv` | gene ID, biotype, name, product, coordinates, length | metrics, report |
 
 **Obelisk-S.s sequence.** `resources/obelisk_000003.fasta` holds Obelisk_000003 (1137 nt),
@@ -58,7 +58,9 @@ extracted once from the supplementary table `mmc2.xlsx` of Zheludev et al. (2024
 `scripts/extract_obelisk.py` (row `Obelisk_000003_000001_000001`). Its Oblin-1 ORF lies on
 the + strand (nt 51–743), which defines the obelisk *sense* strand. The obelisk is circular:
 its first 30 nt are appended to its end so that reads crossing the circle junction can align,
-as in the original article.
+as in the original article. The obelisk is annotated twice, as `Obelisk_000003` (+ strand,
+sense) and `Obelisk_000003_antisense` (− strand), so that stranded counting gives one count
+per strand.
 
 ### 02. Sample sheets and reads
 
@@ -102,6 +104,54 @@ again (`results/qc/trimmed/multiqc_{A,B}.html`, including the Cutadapt logs). Tr
 | B | `-u 1 -U 1 -a CTGTCTCTTATACACATCT -A CTGTCTCTTATACACATCT --nextseq-trim=20` | the first base of both reads is a non-biological T; Nextera-type adapter; two-colour (NovaSeq) quality trimming |
 
 Both datasets use `--minimum-length 20`.
+
+### 05. Mapping and strandedness
+
+```bash
+THREADS=8 bash scripts/05_map.sh A
+```
+
+Builds the HISAT2 index of `sk36_obelisk.fa` once (`data/ref/hisat2/`) and maps the trimmed reads
+of the dataset with `--no-spliced-alignment` (bacteria have no introns). Sorted and indexed BAM
+files, unmapped reads included, go to `data/bam/<dataset>/`. For each run,
+`results/mapping/<dataset>/` holds the HISAT2 log, `samtools flagstat` and `idxstats`, and the
+RSeQC `infer_experiment.py` report. The report is computed on host genes only and skipped for
+the media controls, which have almost no reads.
+
+**Strandedness.** In dataset A, 0.965–0.994 of the reads follow `1++,1--,2+-,2-+`: read 1 has
+the strand of the RNA (featureCounts `-s 1`, kallisto `--fr-stranded`). The value is set by hand
+for each dataset in `06_count.sh`; dataset B is not set yet.
+
+### 06. Read counts and obelisk metrics
+
+```bash
+THREADS=8 bash scripts/06_count.sh A
+```
+
+- **featureCounts** (`-p --countReadPairs -s 1 -F SAF`): read pairs per gene in
+  `results/counts/<dataset>/featurecounts.tsv`. With the default options only uniquely mapped
+  pairs are counted, so pairs from the four identical rRNA operons stay unassigned.
+- **`scripts/obelisk_metrics.py`**: `results/obelisk/<dataset>/obelisk_metrics.tsv`, one row
+  per run. Each read pair is classified once by its primary alignment (read 1, or read 2 when
+  only read 2 is mapped) as unmapped, rRNA, other host, obelisk sense or obelisk antisense. The
+  strand is that of the RNA molecule, given by `-s`. rRNA pairs are counted here because
+  featureCounts leaves them unassigned.
+
+  | Column | Content |
+  |---|---|
+  | `pct_mapped` | mapped pairs, % of all pairs |
+  | `pct_rrna_mapped` | rRNA pairs, % of mapped pairs |
+  | `pct_obelisk_total`, `pct_obelisk_mapped`, `pct_obelisk_non_rrna` | obelisk pairs (both strands), % of all, mapped and non-rRNA mapped pairs |
+  | `pct_antisense` | antisense obelisk pairs, % of obelisk pairs |
+  | `obelisk_tpm`, `obelisk_rank` | obelisk TPM (sense + antisense, from featureCounts) and its rank among the CDS (1 = most abundant) |
+
+- **`scripts/plot_obelisk_coverage.py`**: `results/obelisk/<dataset>/obelisk_coverage.png`
+  (with the data in `.tsv`). Read depth along the obelisk for each RNA strand, per million read
+  pairs, with the junction extension folded back onto the 1137 nt circle. There is one panel per
+  preparation (ObP1 runs only), with the replicate mean and range on a log scale as in Fig. 5B
+  of Zheludev et al. (2024), and the Oblin-1 ORF shaded.
+- **MultiQC**: `results/mapping/multiqc_<dataset>.html` (HISAT2, samtools, RSeQC and
+  featureCounts).
 
 ## Status
 
