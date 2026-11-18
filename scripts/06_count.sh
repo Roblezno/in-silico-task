@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Step 06: count read pairs per gene with featureCounts and compute the
-# obelisk metrics.
+# Step 06: count read pairs per gene with featureCounts, compute the obelisk
+# metrics and plot the obelisk coverage by strand.
 #
 # - Strandedness (-s), set per dataset from RSeQC infer_experiment (step 05):
 #     A: 0.965-0.994 of the reads are explained by "1++,1--,2+-,2-+", so read 1
@@ -15,6 +15,7 @@
 # Outputs:
 #   results/counts/<dataset>/featurecounts.tsv(.summary)   counts per gene
 #   results/obelisk/<dataset>/obelisk_metrics.tsv          one row per run
+#   results/obelisk/<dataset>/obelisk_coverage.{png,tsv}   coverage along the obelisk by strand
 #   results/mapping/multiqc_<dataset>.html                 HISAT2, samtools, RSeQC and featureCounts
 #
 # Usage (inside the in-silico-task environment):
@@ -31,7 +32,11 @@ fi
 DATASET="$1"
 THREADS="${THREADS:-8}"
 case "${DATASET}" in
-    A) STRAND=1 ;;
+    A)
+        STRAND=1
+        # Coverage figure: obelisk-positive runs, one panel per preparation.
+        COVERAGE_OPTIONS=(--keep strain=ObP1 --group-by prep --groups totalRNA rRNAdep RNaseR)
+        ;;
     B) echo "Strandedness of dataset B is not set yet (phase F5)" >&2; exit 1 ;;
 esac
 SAMPLES="config/samples_${DATASET}.tsv"
@@ -57,6 +62,13 @@ python scripts/obelisk_metrics.py \
     --samples "${SAMPLES}" --bamdir "${BAMDIR}" --strand "${STRAND}" \
     --genes data/ref/genes.tsv --counts "${COUNTDIR}/featurecounts.tsv" \
     --threads "${THREADS}" --output "${OBELISKDIR}/obelisk_metrics.tsv"
+
+echo "Obelisk coverage on dataset ${DATASET}"
+python scripts/plot_obelisk_coverage.py \
+    --samples "${SAMPLES}" --bamdir "${BAMDIR}" --strand "${STRAND}" \
+    --obelisk resources/obelisk_000003.fasta --metrics "${OBELISKDIR}/obelisk_metrics.tsv" \
+    "${COVERAGE_OPTIONS[@]}" \
+    --threads "${THREADS}" --output-prefix "${OBELISKDIR}/obelisk_coverage"
 
 echo "MultiQC on dataset ${DATASET}"
 multiqc --force --quiet --filename "multiqc_${DATASET}" --outdir results/mapping \
