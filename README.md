@@ -120,7 +120,7 @@ the media controls, which have almost no reads.
 
 **Strandedness.** In dataset A, 0.965–0.994 of the reads follow `1++,1--,2+-,2-+`: read 1 has
 the strand of the RNA (featureCounts `-s 1`, kallisto `--fr-stranded`). The value is set by hand
-for each dataset in `06_count.sh`; dataset B is not set yet.
+for each dataset in `06_count.sh` and `07_quant.sh`; dataset B is not set yet.
 
 ### 06. Read counts and obelisk metrics
 
@@ -152,6 +152,46 @@ THREADS=8 bash scripts/06_count.sh A
   of Zheludev et al. (2024), and the Oblin-1 ORF shaded.
 - **MultiQC**: `results/mapping/multiqc_<dataset>.html` (HISAT2, samtools, RSeQC and
   featureCounts).
+
+### 07. kallisto quantification
+
+```bash
+THREADS=8 bash scripts/07_quant.sh A
+```
+
+Builds the kallisto index of `transcripts.fa` once (`data/ref/kallisto/`) and quantifies the ObP1
+and ObN1 runs of the dataset with `--fr-stranded` and no bootstraps; media controls are skipped.
+For each run, `results/quant/<dataset>/<run>/` holds `abundance.tsv`, `run_info.json` and the
+kallisto log, and `results/quant/multiqc_quant_<dataset>.html` summarises them. The output is plain
+text (`--plaintext`), so tximport does not need rhdf5. The obelisk sense and antisense targets are
+reverse complements of each other and share all their k-mers: only stranded quantification can
+tell them apart.
+
+### 08. Differential expression
+
+```bash
+bash scripts/08_de.sh A
+```
+
+Runs `scripts/de_deseq2.R` once per library preparation (total RNA, rRNA-depleted and
+RNaseR-treated). DESeq2 compares ObP1 with ObN1 (design `~ strain`; a positive log2 fold change
+means higher in ObP1; DE when padj < 0.05) on two quantification routes:
+
+- featureCounts read-pair counts (step 06), with `DESeqDataSetFromMatrix`;
+- kallisto estimated counts (step 07), imported with tximport and `DESeqDataSetFromTximport`.
+
+In both routes the obelisk sense and antisense counts are added up into one gene,
+`Obelisk_000003`, and the 12 rRNA genes are left out, since their level reflects the rRNA
+depletion (2337 genes). Outputs in `results/de/<dataset>/<prep>/`:
+
+| File | Content |
+|---|---|
+| `deseq2_featurecounts.tsv`, `deseq2_kallisto.tsv` | DESeq2 results per gene, sorted by padj |
+| `size_factors.tsv` | median-of-ratios and library-size factors per run, with and without the obelisk |
+| `summary.tsv` | per route: genes tested, host DE genes, obelisk log2FC and padj, Spearman correlation of the log2FC between routes |
+| `pca.png` | PCA of the variance-stabilised counts, host genes only |
+| `ma.png`, `volcano.png` | MA and volcano plots; values beyond the range of the host genes are drawn as triangles at the edge |
+| `lfc_concordance.png` | log2FC from featureCounts against kallisto, host genes with mean count ≥ 10 in both |
 
 ## Status
 
