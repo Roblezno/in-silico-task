@@ -1,0 +1,10 @@
+prep	metric	mean	sd	source
+totalRNA	pct_obelisk	0.6	0.04	Zheludev et al. 2024, Fig. 4D (text p. 6526)
+totalRNA	pct_rrna	79.1	4.1	Zheludev et al. 2024, Fig. 4D (text p. 6526)
+totalRNA	pct_antisense	93.6	1.2	Zheludev et al. 2024, Fig. 5B (text p. 6526)
+rRNAdep	pct_obelisk	3.5	0.9	Zheludev et al. 2024, Fig. 4D (text p. 6526)
+rRNAdep	pct_rrna	0.1	0.1	Zheludev et al. 2024, Fig. 4D (text p. 6526)
+rRNAdep	pct_antisense	98	0.3	Zheludev et al. 2024, Fig. 5B (text p. 6526)
+RNaseR	pct_obelisk	6.6	1.1	Zheludev et al. 2024, Fig. 4D (text p. 6526)
+RNaseR	pct_rrna	9.8	1.8	Zheludev et al. 2024, Fig. 4D (text p. 6526)
+RNaseR	pct_antisense	98.6	0.3	Zheludev et al. 2024, Fig. 5B (text p. 6526)
