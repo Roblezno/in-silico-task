@@ -108,7 +108,7 @@ Both datasets use `--minimum-length 20`.
 ### 05. Mapping and strandedness
 
 ```bash
-THREADS=8 bash scripts/05_map.sh A
+THREADS=8 bash scripts/05_map.sh A    # or B
 ```
 
 Builds the HISAT2 index of `sk36_obelisk.fa` once (`data/ref/hisat2/`) and maps the trimmed reads
@@ -118,17 +118,21 @@ files, unmapped reads included, go to `data/bam/<dataset>/`. For each run,
 RSeQC `infer_experiment.py` report. The report is computed on host genes only and skipped for
 the media controls, which have almost no reads.
 
-**Strandedness.** In dataset A, 0.965–0.994 of the reads follow `1++,1--,2+-,2-+`: read 1 has
-the strand of the RNA (featureCounts `-s 1`, kallisto `--fr-stranded`). The value is set by hand
-for each dataset in `06_count.sh` and `07_quant.sh`; dataset B is not set yet.
+**Strandedness.** The value is set by hand for each dataset in `06_count.sh` and `07_quant.sh`
+after reading the `infer_experiment.py` reports:
+
+| Dataset | Reads following the pattern | Read 1 | featureCounts | kallisto |
+|---|---|---|---|---|
+| A | 0.965–0.994 `1++,1--,2+-,2-+` | sense to the RNA | `-s 1` | `--fr-stranded` |
+| B | 0.964–0.997 `1+-,1-+,2++,2--` | antisense to the RNA (dUTP library) | `-s 2` | `--rf-stranded` |
 
 ### 06. Read counts and obelisk metrics
 
 ```bash
-THREADS=8 bash scripts/06_count.sh A
+THREADS=8 bash scripts/06_count.sh A    # or B
 ```
 
-- **featureCounts** (`-p --countReadPairs -s 1 -F SAF`): read pairs per gene in
+- **featureCounts** (`-p --countReadPairs -F SAF`, with `-s 1` in A and `-s 2` in B): read pairs per gene in
   `results/counts/<dataset>/featurecounts.tsv`. With the default options only uniquely mapped
   pairs are counted, so pairs from the four identical rRNA operons stay unassigned.
 - **`scripts/obelisk_metrics.py`**: `results/obelisk/<dataset>/obelisk_metrics.tsv`, one row
@@ -148,8 +152,9 @@ THREADS=8 bash scripts/06_count.sh A
 - **`scripts/plot_obelisk_coverage.py`**: `results/obelisk/<dataset>/obelisk_coverage.png`
   (with the data in `.tsv`). Read depth along the obelisk for each RNA strand, per million read
   pairs, with the junction extension folded back onto the 1137 nt circle. There is one panel per
-  preparation (ObP1 runs only), with the replicate mean and range on a log scale as in Fig. 5B
-  of Zheludev et al. (2024), and the Oblin-1 ORF shaded.
+  preparation in A (ObP1 runs only) and one per oxygen condition in B (all runs), with the
+  replicate mean and range on a log scale as in Fig. 5B of Zheludev et al. (2024), and the
+  Oblin-1 ORF shaded.
 - **MultiQC**: `results/mapping/multiqc_<dataset>.html` (HISAT2, samtools, RSeQC and
   featureCounts).
 
@@ -167,22 +172,27 @@ text (`--plaintext`), so tximport does not need rhdf5. The obelisk sense and ant
 reverse complements of each other and share all their k-mers: only stranded quantification can
 tell them apart.
 
+Dataset A only for now: dataset B is analysed with featureCounts in step 08 and will be quantified
+with kallisto in the mapper benchmark, so `07_quant.sh B` stops with an error.
+
 ### 08. Differential expression
 
 ```bash
-bash scripts/08_de.sh A
+bash scripts/08_de.sh A    # or B
 ```
 
-Runs `scripts/de_deseq2.R` once per library preparation (total RNA, rRNA-depleted and
-RNaseR-treated). DESeq2 compares ObP1 with ObN1 (design `~ strain`; a positive log2 fold change
-means higher in ObP1; DE when padj < 0.05) on two quantification routes:
+In both datasets the obelisk sense and antisense counts are added up into one gene,
+`Obelisk_000003`, and the 12 rRNA genes are left out, since their level reflects the rRNA
+depletion (2337 genes). A gene is DE when padj < 0.05.
+
+**Dataset A: ObP1 against ObN1.** Runs `scripts/de_deseq2.R` once per library preparation (total
+RNA, rRNA-depleted and RNaseR-treated). DESeq2 compares ObP1 with ObN1 (design `~ strain`; a
+positive log2 fold change means higher in ObP1) on two quantification routes:
 
 - featureCounts read-pair counts (step 06), with `DESeqDataSetFromMatrix`;
 - kallisto estimated counts (step 07), imported with tximport and `DESeqDataSetFromTximport`.
 
-In both routes the obelisk sense and antisense counts are added up into one gene,
-`Obelisk_000003`, and the 12 rRNA genes are left out, since their level reflects the rRNA
-depletion (2337 genes). Outputs in `results/de/<dataset>/<prep>/`:
+Outputs in `results/de/A/<prep>/`:
 
 | File | Content |
 |---|---|
@@ -192,6 +202,49 @@ depletion (2337 genes). Outputs in `results/de/<dataset>/<prep>/`:
 | `pca.png` | PCA of the variance-stabilised counts, host genes only |
 | `ma.png`, `volcano.png` | MA and volcano plots; values beyond the range of the host genes are drawn as triangles at the edge |
 | `lfc_concordance.png` | log2FC from featureCounts against kallisto, host genes with mean count ≥ 10 in both |
+
+**Dataset B: culture conditions.** Runs `scripts/de_conditions.R` on the featureCounts counts with
+design `~ oxygen + sugar` (no interaction, too few replicates). Two contrasts come from the same
+fit: oxic against anoxic and sucrose against glucose (a positive log2 fold change means higher in
+oxic or in sucrose). It runs twice:
+
+- `results/de/B/all/`: the 10 runs;
+- `results/de/B/no_oxic_rep3/`: without `glucose_oxic_3` and `sucrose_oxic_3` (`--exclude`), a
+  sensitivity run because these two runs stand out (22–24 % rRNA and 14–16 % obelisk pairs) and
+  may carry a batch effect.
+
+| File | Content |
+|---|---|
+| `deseq2_oxygen.tsv`, `deseq2_sugar.tsv` | DESeq2 results per gene and contrast, sorted by padj |
+| `summary.tsv` | per contrast: samples, genes tested, host DE genes (up and down), obelisk log2FC, SE and padj |
+| `obelisk_counts.tsv`, `obelisk_counts.png` | raw and normalised obelisk counts per run, by condition |
+| `pca.png` | PCA of the variance-stabilised counts, host genes only; colour = oxygen, shape = sugar |
+| `ma.png`, `volcano.png` | MA and volcano plots, one panel per contrast; the volcano has one y axis per panel |
+
+### 09. Comparison with the published values
+
+```bash
+bash scripts/09_compare.sh
+```
+
+Runs `scripts/compare_studies.py`, which puts the obelisk metrics of step 06 next to the values
+published for each dataset. The published values were copied by hand into `resources/`, with
+their source:
+
+- `zheludev2024_values.tsv`: Zheludev et al. (2024), mean ± SD per preparation of the obelisk and
+  rRNA percentages (Fig. 4D) and of the antisense percentage (Fig. 5B);
+- `maddamsetti2025_values.tsv`: Maddamsetti & You (2025), per run, the obelisk rank (Table 1) and
+  the mapped and obelisk percentages (Table 2).
+
+Outputs in `results/comparison/`:
+
+| File | Content |
+|---|---|
+| `obelisk_summary.tsv` | one row per group (A: ObP1 per preparation; B: per oxygen condition), our values as mean ± SD next to the published ones, formatted for the report |
+| `b_vs_maddamsetti.tsv` | one row per run of dataset B: our and the published percentages, their ratio and the obelisk ranks |
+
+The published percentages are not defined exactly like ours (reads or k-mers instead of read
+pairs, other mappers and filters): the `note` column of the summary says how each one was obtained.
 
 ## Status
 
