@@ -27,7 +27,6 @@ config/      sample sheets and parameters
 resources/   small input files that cannot be downloaded by the scripts
 scripts/     numbered scripts are analysis steps, in execution order;
              unnumbered scripts are helpers called by them
-report/      Quarto report
 data/        downloaded data and references (not versioned)
 results/     intermediate and final results (not versioned)
 ```

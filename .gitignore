@@ -2,12 +2,6 @@
 data/
 results/
 
-# Rendered report output (Quarto)
-.quarto/
-report/*.html
-report/*.pdf
-report/*_files/
-
 # Python
 __pycache__/
 *.py[cod]
