@@ -18,8 +18,14 @@
 # - Unmapped reads stay in the BAM, so samtools flagstat reports the total
 #   number of read pairs.
 # - Only the mapper process is timed (GNU time), not samtools sort nor the
-#   index building. Mapping is always re-run; references and indexes are
-#   built once.
+#   index building. References, indexes and mappings are done once: a finished
+#   mapping leaves a <ref>.<tool>.done marker in results/benchmark/<dataset>/logs/
+#   and is skipped on the next run. Delete the markers to re-map (the time
+#   measurements come from the run that made the BAM).
+# - Counting and metrics are quick and always re-run: featureCounts per
+#   variant (primary alignments, multi-mapping pairs included), the obelisk
+#   metrics of the main analysis (scripts/obelisk_metrics.py) and the
+#   benchmark summary (scripts/benchmark_metrics.py).
 #
 # Outputs:
 #   data/benchmark/B/<run>_sub_{1,2}.fastq.gz           subsampled reads (B only)
@@ -32,7 +38,16 @@
 #   results/benchmark/<dataset>/logs/<ref>.<tool>.log         mapper stderr
 #   results/benchmark/<dataset>/logs/<ref>.<tool>.time.txt    GNU time -v report
 #   results/benchmark/<dataset>/logs/<ref>.<tool>.flagstat    (aligners only)
+#   results/benchmark/<dataset>/logs/<ref>.<tool>.done        mapping finished marker
 #   results/benchmark/<dataset>/kallisto/<ref>/         abundance.tsv, run_info.json
+#   results/benchmark/<dataset>/counts/<ref>.featurecounts.tsv(.summary,.log)
+#                                                       counts of the four aligners
+#   results/benchmark/<dataset>/metrics/<ref>.combinations.tsv     sample sheet of
+#                                                       the aligners (run = <ref>.<tool>)
+#   results/benchmark/<dataset>/metrics/<ref>.obelisk_metrics.tsv  obelisk metrics
+#   results/benchmark/<dataset>/benchmark_summary.tsv   one row per variant x tool
+#   results/benchmark/<dataset>/host_spearman_R1.tsv    Spearman correlation of the
+#                                                       host gene counts between tools
 #   <tool> is bwa_mem, bowtie2_e2e, bowtie2_local, hisat2 or kallisto.
 #
 # Usage (inside the in-silico-task environment):
@@ -56,12 +71,14 @@ case "${DATASET}" in
         SUBSAMPLE=0
         R2_EXTENSION=77         # trimmed A reads are at most 78 nt
         STRAND_OPTION="--fr-stranded"   # read 1 has the RNA strand (featureCounts -s 1)
+        STRAND=1
         ;;
     B)
         RUN="SRR23591557"       # sucrose, oxic, replicate 1
         SUBSAMPLE=2000000
         R2_EXTENSION=98         # trimmed B reads are at most 99 nt
         STRAND_OPTION="--rf-stranded"   # dUTP, read 1 is antisense (featureCounts -s 2)
+        STRAND=2
         ;;
 esac
 
@@ -76,7 +93,8 @@ LOGDIR="${OUTDIR}/logs"
 VARIANTS=(R0 R1 R2 R3)
 declare -A EXTENSION=([R0]=0 [R1]=30 [R2]="${R2_EXTENSION}" [R3]=1137)
 INDEX_TOOLS=(bwa bowtie2 hisat2 kallisto)
-MAP_TOOLS=(bwa_mem bowtie2_e2e bowtie2_local hisat2 kallisto)
+ALIGNER_TOOLS=(bwa_mem bowtie2_e2e bowtie2_local hisat2)
+MAP_TOOLS=("${ALIGNER_TOOLS[@]}" kallisto)
 
 # --- Reads ---------------------------------------------------------------
 
@@ -102,7 +120,8 @@ fi
 
 mkdir -p "${BAMDIR}" "${LOGDIR}" "${OUTDIR}/kallisto"
 lines=$(gzip -dc "${READ1}" | wc -l)
-printf 'run\tpairs\n%s\t%d\n' "${RUN}" "$((lines / 4))" > "${OUTDIR}/input_pairs.tsv"
+PAIRS=$((lines / 4))
+printf 'run\tpairs\n%s\t%d\n' "${RUN}" "${PAIRS}" > "${OUTDIR}/input_pairs.tsv"
 
 # --- References and indexes ---------------------------------------------
 
@@ -198,14 +217,74 @@ map_kallisto() {
         "${READ1}" "${READ2}" 2> "${prefix}.log"
 }
 
+# The marker is written only after the whole combination is finished (BAM,
+# index and flagstat, or the kallisto output), so an interrupted mapping is
+# redone.
 for ref in "${VARIANTS[@]}"; do
     for tool in "${MAP_TOOLS[@]}"; do
+        marker="${LOGDIR}/${ref}.${tool}.done"
+        if [[ -f "${marker}" ]]; then
+            echo "${tool} on ${ref} already done, skipping"
+            continue
+        fi
         echo "${tool} on ${ref} (dataset ${DATASET}, ${RUN})"
         if [[ "${tool}" == "kallisto" ]]; then
             map_kallisto "${ref}"
         else
             map_aligner "${ref}" "${tool}"
         fi
+        touch "${marker}"
     done
 done
+
+# --- Counting and metrics ------------------------------------------------
+
+COUNTDIR="${OUTDIR}/counts"
+METRICDIR="${OUTDIR}/metrics"
+mkdir -p "${COUNTDIR}" "${METRICDIR}"
+
+# Per variant: count the four aligners together, then compute the obelisk
+# metrics of the main analysis. Always re-run (quick).
+for ref in "${VARIANTS[@]}"; do
+    dir="${REFROOT}/${ref}"
+    sheet="${METRICDIR}/${ref}.combinations.tsv"
+    counts="${COUNTDIR}/${ref}.featurecounts.tsv"
+
+    # obelisk_metrics.py reads <bamdir>/<run>.bam and featureCounts names its
+    # columns by the BAM stem, so the combination name <ref>.<tool> plays the
+    # role of the run. The script drops read_count.
+    {
+        printf 'run\tref\ttool\tread_count\n'
+        for tool in "${ALIGNER_TOOLS[@]}"; do
+            printf '%s.%s\t%s\t%s\t%d\n' "${ref}" "${tool}" "${ref}" "${tool}" "${PAIRS}"
+        done
+    } > "${sheet}"
+
+    bams=()
+    for tool in "${ALIGNER_TOOLS[@]}"; do
+        bams+=("${BAMDIR}/${ref}.${tool}.bam")
+    done
+
+    # With --primary every primary alignment is counted, also of multi-mapping
+    # pairs (R2 and R3 repeat obelisk sequence), so each pair counts once at
+    # its primary alignment, the same rule as obelisk_metrics.py. bwa and
+    # bowtie2 set no NH tag, so this is the only rule that treats all aligners
+    # alike.
+    echo "featureCounts on ${ref} (dataset ${DATASET}, -s ${STRAND})"
+    featureCounts -p --countReadPairs -s "${STRAND}" -M --primary -T "${THREADS}" \
+        -F SAF -a "${dir}/annotation.saf" \
+        -o "${counts}" "${bams[@]}" \
+        > "${COUNTDIR}/${ref}.featurecounts.log" 2>&1
+
+    echo "Obelisk metrics on ${ref} (dataset ${DATASET})"
+    python scripts/obelisk_metrics.py \
+        --samples "${sheet}" --bamdir "${BAMDIR}" --genes "${dir}/genes.tsv" \
+        --counts "${counts}" --strand "${STRAND}" --threads "${THREADS}" \
+        --output "${METRICDIR}/${ref}.obelisk_metrics.tsv"
+done
+
+echo "Benchmark summary on dataset ${DATASET}"
+python scripts/benchmark_metrics.py \
+    --bamdir "${BAMDIR}" --refdir "${REFROOT}" --resultdir "${OUTDIR}" \
+    --obelisk "${OBELISK_FASTA}" --threads "${THREADS}"
 echo "Done"
