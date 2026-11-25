@@ -48,6 +48,9 @@
 #   results/benchmark/<dataset>/benchmark_summary.tsv   one row per variant x tool
 #   results/benchmark/<dataset>/host_spearman_R1.tsv    Spearman correlation of the
 #                                                       host gene counts between tools
+#   results/benchmark/<dataset>/figures/*.png           benchmark figures (abundance,
+#                                                       junction, MAPQ and soft clipping,
+#                                                       host correlation and resources)
 #   <tool> is bwa_mem, bowtie2_e2e, bowtie2_local, hisat2 or kallisto.
 #
 # Usage (inside the in-silico-task environment):
@@ -287,4 +290,7 @@ echo "Benchmark summary on dataset ${DATASET}"
 python scripts/benchmark_metrics.py \
     --bamdir "${BAMDIR}" --refdir "${REFROOT}" --resultdir "${OUTDIR}" \
     --obelisk "${OBELISK_FASTA}" --threads "${THREADS}"
+
+echo "Benchmark figures on dataset ${DATASET}"
+python scripts/plot_benchmark.py --resultdir "${OUTDIR}" --title "Dataset ${DATASET}, ${RUN}"
 echo "Done"
