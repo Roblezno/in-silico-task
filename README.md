@@ -172,8 +172,8 @@ text (`--plaintext`), so tximport does not need rhdf5. The obelisk sense and ant
 reverse complements of each other and share all their k-mers: only stranded quantification can
 tell them apart.
 
-Dataset A only for now: dataset B is analysed with featureCounts in step 08 and will be quantified
-with kallisto in the mapper benchmark, so `07_quant.sh B` stops with an error.
+Dataset A only: dataset B is analysed with featureCounts in step 08 and quantified with kallisto
+only in the mapper benchmark (step 10, one subsampled run), so `07_quant.sh B` stops with an error.
 
 ### 08. Differential expression
 
@@ -245,6 +245,60 @@ Outputs in `results/comparison/`:
 
 The published percentages are not defined exactly like ours (reads or k-mers instead of read
 pairs, other mappers and filters): the `note` column of the summary says how each one was obtained.
+
+### 10. Mapper benchmark
+
+```bash
+THREADS=8 bash scripts/10_benchmark.sh A    # or B
+```
+
+Compares how four obelisk reference variants and five mapping configurations handle the circular
+obelisk, on one sample per dataset: A uses SRR29668056 (ObP1-A_totalRNA) whole (0.70 M pairs), B
+uses SRR23591557 (sucrose, oxic, replicate 1) subsampled to 2 M pairs with `seqtk sample -s 42`
+(the same seed on both mates keeps the pairs). There are no simulated reads, so the benchmark
+measures agreement between tools, not accuracy.
+
+| Variant | Obelisk contig | Note |
+|---|---|---|
+| R0 | 1137 nt | linear: no read can cross the circle junction |
+| R1 | + 30 nt | the reference of steps 01–09 |
+| R2 | + read length − 1 (A: 77, B: 98) | every read crossing the junction fits in one piece |
+| R3 | + 1137 nt | dimer: every obelisk read maps to two places |
+
+The variants are built with `build_references.py --extension` in `data/ref/benchmark/<dataset>/`,
+each with its BWA, Bowtie2, HISAT2 and kallisto index. The tools run with default options except:
+`bwa mem`, `bowtie2` (end-to-end), `bowtie2 --local`, `hisat2 --no-spliced-alignment` and
+`kallisto quant` with the strand of the dataset (`--fr-stranded` in A, `--rf-stranded` in B).
+GNU time (`time -v`) records the run time and peak memory of the mapper process only. References,
+indexes and mappings are made once; a finished mapping leaves a `.done` marker in
+`results/benchmark/<dataset>/logs/` (delete it to re-map). Counting, metrics and figures are
+always re-run.
+
+- **featureCounts** per variant on the four BAM files (`-M --primary`, strand as in step 06):
+  every primary alignment is counted, so pairs that map to repeated obelisk sequence (R2, R3)
+  count once. Supplementary alignments are counted too: bwa splits reads that cross the junction
+  in R0, which raises its obelisk TPM.
+- **`scripts/obelisk_metrics.py`**, unchanged, with one sheet row per aligner (`run` =
+  `<ref>.<tool>`): the obelisk metrics of step 06.
+- **`scripts/benchmark_metrics.py`**: `results/benchmark/<dataset>/benchmark_summary.tsv`, one row
+  per variant × tool, and `host_spearman_R1.tsv`.
+
+  | Column | Content |
+  |---|---|
+  | `pct_obelisk_total`, `pct_antisense`, `obelisk_tpm`, `obelisk_rank` | as in step 06; for kallisto from `est_counts`, and "mapped" means pseudoaligned |
+  | `junction_reads`, `pct_junction_reads` | primary obelisk reads with aligned bases on both sides of the circle junction |
+  | `end_clipped_reads` | primary obelisk reads soft-clipped at a contig end (in R0, reads cut by the junction) |
+  | `supplementary_alignments` | supplementary alignments on the obelisk contig |
+  | `pct_mapq0`, `median_mapq` | MAPQ of the primary obelisk reads (scales differ between aligners) |
+  | `pct_softclipped`, `mean_softclip_nt` | primary obelisk reads with soft clipping, and soft-clipped nt per read |
+  | `wall_s`, `user_s`, `sys_s`, `cpu_pct`, `max_rss_mb` | GNU time report of the mapper |
+
+  The alignment columns are empty for kallisto. `host_spearman_R1.tsv` is the Spearman
+  correlation of the host CDS counts between the five tools with variant R1.
+- **`scripts/plot_benchmark.py`**: four figures in `results/benchmark/<dataset>/figures/`:
+  `obelisk_abundance.png` (obelisk and antisense shares), `obelisk_junction.png` (junction and
+  end-clipped reads), `obelisk_mapq_softclip.png` (median MAPQ and soft clipping) and
+  `host_spearman_resources.png` (host correlation, wall time and peak memory with R1).
 
 ## Status
 
